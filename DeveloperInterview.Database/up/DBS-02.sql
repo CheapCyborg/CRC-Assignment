@@ -1,0 +1,5 @@
+ALTER TABLE CustomerOrder WITH NOCHECK
+ADD CONSTRAINT CustomerOrder_CustomerId_FK 
+FOREIGN KEY (CustomerId) references Customer(Id)
+ON UPDATE CASCADE 
+ON DELETE CASCADE;
