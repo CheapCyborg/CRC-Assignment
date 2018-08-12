@@ -4,6 +4,7 @@ using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Text;
 using System.Web;
 using System.Web.Mvc;
 using DeveloperInterview.Website.Models;
@@ -12,14 +13,14 @@ namespace DeveloperInterview.Website.Controllers
 {
     public class OrderController : Controller
     {
-        public ActionResult Index()
-        {
-            var model = new OrderIndexViewModel();
-            model.DatabaseSuccess = CanConnectToDb();
-            return View(model);
-        }
-
-        private static bool CanConnectToDb()
+		public ActionResult Index()
+		{
+			var model = new HomeIndexViewModel();
+			model.DatabaseSuccess = CanConnectToDb();
+			return View(model);
+		}
+	
+		private static bool CanConnectToDb()
         {
             var cnn = new SqlConnection(ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString);
             try
@@ -38,18 +39,64 @@ namespace DeveloperInterview.Website.Controllers
             }
         }
 
-        public ActionResult About()
-        {
-            ViewBag.Message = "Your application description page.";
 
-            return View();
-        }
+		public ActionResult getAllOrders()
+		{
+			// Connect to Database
+			using (var cnn = new SqlConnection(ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString))
+			{
+				cnn.Open();
 
-        public ActionResult Contact()
-        {
-            ViewBag.Message = "Your contact page.";
+				// Create Command
+				using (SqlCommand cmd = new SqlCommand(
+					@"SELECT CustomerOrderId, FirstName ,ProductId, [Name], Price
+					FROM OrderProduct AS o
+					INNER JOIN CustomerOrder co ON co.id = o.CustomerOrderId
+					INNER JOIN Product p ON p.Id = o.ProductId
+					INNER JOIN Customer c ON c.Id = co.CustomerId
+					ORDER BY FirstName"
+					))
+				{
+					;
+					cmd.Connection = cnn;
 
-            return View();
-        }
+					// Read from Database
+					SqlDataReader reader = cmd.ExecuteReader();
+					var orders = new List<OrderIndexViewModel>();
+					while (reader.Read())
+					{
+						var order = new OrderIndexViewModel();
+						order.CustomerOrderId = reader.GetInt32(0);
+						order.FirstName = reader.GetString(1);
+						order.ProductId = reader.GetInt32(2);
+						order.Name = reader.GetString(3);
+						order.Price = reader.GetDecimal(4);
+						orders.Add(order);
+					}
+					cnn.Close();
+					return View(orders);
+				}
+			}
+		}
+
+		public ActionResult CreateOrder()
+		{
+			using (var cnn = new SqlConnection(ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString))
+			{
+				cnn.Open();
+				using (var com = new SqlCommand())
+				{
+					var order = new OrderIndexViewModel();
+					com.Connection = cnn;
+					com.CommandText = "INSERT INTO  OrderProduct(CustomerOrderId,ProductId, Quantity) VALUES (@CustomerOrderId, @ProductId, @Quantity)";
+					com.Parameters.AddWithValue("@CustomerOrderId", order.CustomerOrderId);
+					com.Parameters.AddWithValue("@ProductId", order.ProductId);
+					com.Parameters.AddWithValue("@Quantity", order.Quantity);
+					com.ExecuteNonQuery();
+				}
+				return View();
+			}
+		}
     }
+
 }
