@@ -29,5 +29,7 @@ namespace DeveloperInterview.Website.Models
         {
             return new ApplicationDbContext();
         }
-    }
+
+		public System.Data.Entity.DbSet<DeveloperInterview.Website.Models.CustomerModel> CustomerModels { get; set; }
+	}
 }

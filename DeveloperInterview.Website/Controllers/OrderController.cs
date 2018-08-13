@@ -54,8 +54,7 @@ namespace DeveloperInterview.Website.Controllers
 					INNER JOIN CustomerOrder co ON co.id = o.CustomerOrderId
 					INNER JOIN Product p ON p.Id = o.ProductId
 					INNER JOIN Customer c ON c.Id = co.CustomerId
-					ORDER BY FirstName"
-					))
+					ORDER BY FirstName"))
 				{
 					;
 					cmd.Connection = cnn;
@@ -81,21 +80,8 @@ namespace DeveloperInterview.Website.Controllers
 
 		public ActionResult CreateOrder()
 		{
-			using (var cnn = new SqlConnection(ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString))
-			{
-				cnn.Open();
-				using (var com = new SqlCommand())
-				{
-					var order = new OrderIndexViewModel();
-					com.Connection = cnn;
-					com.CommandText = "INSERT INTO  OrderProduct(CustomerOrderId,ProductId, Quantity) VALUES (@CustomerOrderId, @ProductId, @Quantity)";
-					com.Parameters.AddWithValue("@CustomerOrderId", order.CustomerOrderId);
-					com.Parameters.AddWithValue("@ProductId", order.ProductId);
-					com.Parameters.AddWithValue("@Quantity", order.Quantity);
-					com.ExecuteNonQuery();
-				}
-				return View();
-			}
+			var model = new CustomerModel();
+			return View(model);
 		}
     }
 

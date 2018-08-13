@@ -1,68 +1,146 @@
-﻿@model DeveloperInterview.Website.Models.OrderIndexViewModel
+﻿@model DeveloperInterview.Website.Models.CustomerModel
 
 @{
-    ViewBag.Title = "CreateOrder";
-    Layout = "~/Views/Shared/_Layout.cshtml";
+	ViewBag.Title = "CreateOrder";
+	Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@using System.Data.SqlClient;
+@using System.Configuration;
+@{
+	ViewBag.Title = "CreateOrder";
+	Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<h2>CreateOrder</h2>
+@{
+	var FirstName = "";
+	var LastName = "";
+	var AddedDate = "";
+	var ProductId = "";
+	var Quantity = "";
+	var CustomerId = 0;
+	var CustomerOrderId = 0;
 
-@using (Html.BeginForm()) 
+
+	var cnn = new SqlConnection(ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString);
+
+	if (IsPost)
+	{
+
+		FirstName = Request.Form["FirstName"];
+		LastName = Request.Form["LastName"];
+		AddedDate = Request.Form["AddedDate"];
+		ProductId = Request.Form["ProductId"];
+		Quantity = Request.Form["Quantity"];
+
+		// Create a new customer in database
+		using (SqlCommand insertCommand = new SqlCommand(@"INSERT INTO Customer (FirstName, LastName, AddedDate) Values(@FirstName, @LastName, @AddedDate)
+												   SELECT * FROM Customer"))
+		{
+			cnn.Open();
+			insertCommand.Connection = cnn;
+			insertCommand.Parameters.AddWithValue("@FirstName", FirstName);
+			insertCommand.Parameters.AddWithValue("@LastName", LastName);
+			insertCommand.Parameters.AddWithValue("@AddedDate", AddedDate);
+			var rdr = insertCommand.ExecuteReader();
+			while (rdr.Read())
+			{
+				// Grab the current id
+				CustomerId = rdr.GetInt32(0);
+			}
+			cnn.Close();
+		}
+		// Create a new order
+		using (SqlCommand insertCommand2 = new SqlCommand(@"INSERT INTO CustomerOrder (CustomerId, AddedDate) Values(@CustomerId, @AddedDate)
+													SELECT * FROM CustomerOrder"))
+		{
+			cnn.Open();
+			insertCommand2.Parameters.AddWithValue("@CustomerId", CustomerId);
+			insertCommand2.Parameters.AddWithValue("@AddedDate", AddedDate);
+			insertCommand2.Connection = cnn;
+			var rdr2 = insertCommand2.ExecuteReader();
+			while (rdr2.Read())
+			{
+				// Grab the current order id
+				CustomerOrderId = rdr2.GetInt32(0);
+			}
+			cnn.Close();
+		}
+		//Finalize the order with the product id and quantity
+		using (SqlCommand insertCommand3 = new SqlCommand(@"INSERT INTO OrderProduct(CustomerOrderId, ProductId, Quantity) Values(@CustomerOrderId, @ProductId, @Quantity)"))
+		{
+			cnn.Open();
+			insertCommand3.Parameters.AddWithValue("@CustomerOrderId", CustomerOrderId);
+			insertCommand3.Parameters.AddWithValue("@ProductId", ProductId);
+			insertCommand3.Parameters.AddWithValue("@Quantity", Quantity);
+			insertCommand3.Connection = cnn;
+			insertCommand3.ExecuteNonQuery();
+			cnn.Close();
+		}
+		@Html.DisplayFor(modelItem => CustomerId)
+		@Html.DisplayFor(modelItem => CustomerOrderId)
+		Response.Redirect("getAllOrders", false);
+	}
+}
+
+<h2>Create a New Order</h2>
+
+@using (Html.BeginForm())
 {
-    @Html.AntiForgeryToken()
-    
-    <div class="form-horizontal">
-        <h4>OrderIndexViewModel</h4>
-        <hr />
-        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
-        <div class="form-group">
-            @Html.LabelFor(model => model.CustomerOrderId, htmlAttributes: new { @class = "control-label col-md-2" })
+	@Html.AntiForgeryToken()
+
+	<div class="form-horizontal">
+		<h4>Customer Info</h4>
+		<hr />
+		@Html.ValidationSummary(true, "", new { @class = "text-danger" })
+		<!-- First Name Feild-->
+		<div class="form-group">
+			@Html.LabelFor(model => model.FirstName, htmlAttributes: new { @class = "control-label col-md-2" })
 			<div class="col-md-10">
-				<input class="form-control text-box single-line" data-val="true" data-val-number="The field ProductId must be a number." data-val-required="The ProductId field is required." id="ProductId" name="ProductId" type="number" value="@Request.Form["CustomerOrderId"]" />
-				@Html.ValidationMessageFor(model => model.CustomerOrderId, "", new { @class = "text-danger" })
+				@Html.EditorFor(model => model.FirstName, new { htmlAttributes = new { @class = "form-control" } })
+				@Html.ValidationMessageFor(model => model.FirstName, "", new { @class = "text-danger" })
 			</div>
-        </div>
+		</div>
+		<!-- Last Name Feild-->
+		<div class="form-group">
+			@Html.LabelFor(model => model.LastName, htmlAttributes: new { @class = "control-label col-md-2" })
+			<div class="col-md-10">
+				@Html.EditorFor(model => model.LastName, new { htmlAttributes = new { @class = "form-control" } })
+				@Html.ValidationMessageFor(model => model.LastName, "", new { @class = "text-danger" })
+			</div>
+		</div>
+		<!-- ProductId Feild-->
+		<div class="form-group">
+			@Html.LabelFor(model => model.ProductId, htmlAttributes: new { @class = "control-label col-md-2" })
+			<div class="col-md-10">
+				@Html.EditorFor(model => model.ProductId, new { htmlAttributes = new { @class = "form-control" } })
+				@Html.ValidationMessageFor(model => model.ProductId, "If value is provied, must be between 1 and 5", new { @class = "text-danger" })
+			</div>
+		</div>
+		<!-- Quantity Feild-->
+		<div class="form-group">
+			@Html.LabelFor(model => model.Quantity, htmlAttributes: new { @class = "control-label col-md-2" })
+			<div class="col-md-10">
+				@Html.EditorFor(model => model.Quantity, new { htmlAttributes = new { @class = "form-control" } })
+				@Html.ValidationMessageFor(model => model.Quantity, "Required if Product Id is entered", new { @class = "text-danger" })
+			</div>
+		</div>
+		<!--Added Date Feild-->
+		<div class="form-group">
+			@Html.LabelFor(model => model.AddedDate.Date, htmlAttributes: new { @class = "control-label col-md-2" })
+			<div class="col-md-10">
+				@Html.EditorFor(model => model.AddedDate, new { htmlAttributes = new { @class = "form-control" } })
+				@Html.ValidationMessageFor(model => model.AddedDate, "", new { @class = "text-danger" })
+			</div>
+		</div>
 
-        <div class="form-group">
-            @Html.LabelFor(model => model.FirstName, htmlAttributes: new { @class = "control-label col-md-2" })
-            <div class="col-md-10">
-                @Html.EditorFor(model => model.FirstName, new { htmlAttributes = new { @class = "form-control" } })
-                @Html.ValidationMessageFor(model => model.FirstName, "", new { @class = "text-danger" })
-            </div>
-        </div>
-
-        <div class="form-group">
-            @Html.LabelFor(model => model.ProductId, htmlAttributes: new { @class = "control-label col-md-2" })
-            <div class="col-md-10">
-                @Html.EditorFor(model => model.ProductId, new { htmlAttributes = new { @class = "form-control" } })
-                @Html.ValidationMessageFor(model => model.ProductId, "", new { @class = "text-danger" })
-            </div>
-        </div>
-
-        <div class="form-group">
-            @Html.LabelFor(model => model.Name, htmlAttributes: new { @class = "control-label col-md-2" })
-            <div class="col-md-10">
-                @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = "form-control" } })
-                @Html.ValidationMessageFor(model => model.Name, "", new { @class = "text-danger" })
-            </div>
-        </div>
-
-        <div class="form-group">
-            @Html.LabelFor(model => model.Price, htmlAttributes: new { @class = "control-label col-md-2" })
-            <div class="col-md-10">
-                @Html.EditorFor(model => model.Price, new { htmlAttributes = new { @class = "form-control" } })
-                @Html.ValidationMessageFor(model => model.Price, "", new { @class = "text-danger" })
-            </div>
-        </div>
-
-        <div class="form-group">
-            <div class="col-md-offset-2 col-md-10">
-                <input type="submit" value="Create" class="btn btn-default" />
-            </div>
-        </div>
-    </div>
+		<div class="form-group">
+			<div class="col-md-offset-2 col-md-10">
+				<input type="submit" value="Create" class="btn btn-default" />
+			</div>
+		</div>
+	</div>
 }
 
 <div>
-    @Html.ActionLink("Back to List", "getAllOrders")
+	@Html.ActionLink("Back to List", "getAllOrders")
 </div>
