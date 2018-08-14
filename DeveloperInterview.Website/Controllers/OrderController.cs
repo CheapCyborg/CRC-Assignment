@@ -56,7 +56,6 @@ namespace DeveloperInterview.Website.Controllers
 					INNER JOIN Customer c ON c.Id = co.CustomerId
 					ORDER BY FirstName"))
 				{
-					;
 					cmd.Connection = cnn;
 
 					// Read from Database

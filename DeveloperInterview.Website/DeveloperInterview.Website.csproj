@@ -271,6 +271,7 @@
     <Content Include="Views\Shared\_LoginPartial.cshtml" />
     <Content Include="Views\Order\getAllOrders.cshtml" />
     <Content Include="Views\Order\CreateOrder.cshtml" />
+    <Content Include="Views\Order\Delete.cshtml" />
     <None Include="Views\Order\Index.cshtml" />
   </ItemGroup>
   <ItemGroup>
